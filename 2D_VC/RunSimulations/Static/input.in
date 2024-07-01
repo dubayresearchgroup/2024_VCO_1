@@ -1,0 +1,105 @@
+clear
+#Variable Definition
+
+#Filenames
+variable name string zj_real
+
+
+#Loops
+variable epsA index ${value}
+variable seed equal 49126
+variable chunk loop 1
+
+#Filenames
+variable filename string ${name}_${epsA}pt1
+log ${filename}.log append
+
+
+if "${chunk} == 1" then "variable input string random_${seed}" &
+else "variable input string ${name}"
+
+#Neighbor Parameters
+variable skin equal 0.5
+variable ghost equal 2.0
+
+
+#Potential Parameters
+variable sigma equal 0.25
+variable cutA equal 2.5*${sigma}
+variable epsB equal 1.0
+variable cutB equal (2^(1/6))*${sigma}
+
+#Kinetic Parameters
+variable temp equal 1.0
+variable damp equal 0.35
+
+
+#Time Parameters
+variable time1 index 13500000
+variable time index 28500000
+variable time2 index 1500000
+variable step equal 0.005
+variable delay equal 5
+variable thermo equal 5000
+variable dump equal 2000
+variable dump2 equal 3000
+
+#Initial Definitions
+
+#Particle and Box Definitions 
+atom_style molecular
+dimension 2
+read_restart ${input}.restart
+reset_timestep 0
+
+#Neighbor Definitions
+neigh_modify delay ${delay} exclude molecule/intra all
+neighbor ${skin} bin
+comm_modify cutoff ${ghost}
+
+#Potential Definitions
+pair_style lj/cut ${cutA}
+pair_modify shift yes
+pair_coeff 3 3 ${epsA} ${sigma} ${cutA}
+pair_coeff 1 3 ${epsA} ${sigma} ${cutA}
+pair_coeff 1 1 ${epsA} ${sigma} ${cutA}
+pair_coeff * 2 ${epsB} ${sigma} ${cutB}
+pair_coeff 2 * ${epsB} ${sigma} ${cutB}
+
+#Kinetic Definitions
+fix 2 all rigid/nve/small molecule langevin ${temp} ${temp} ${damp} ${seed}
+fix 1 all enforce2d
+
+#Time Definitions
+timestep ${step}
+
+#Output Definitions
+thermo ${thermo}
+thermo_style custom step temp pe ke etotal 
+dump fullTraj all atom ${dump} ${filename}.lammpstrj
+
+run ${time1} ##Run first half simulation
+write_restart ${filename}_$(step).restart
+
+thermo ${thermo}
+thermo_style custom step temp pe ke etotal 
+dump halfway all atom ${dump2} ${filename}_half.lammpstrj
+run ${time2} ##data to get yield 50% through simulation
+undump halfway
+
+
+run ${time1}##Run second half simulation
+write_restart ${filename}_$(step).restart
+#Output Definitions
+
+
+thermo ${thermo}
+thermo_style custom step temp pe ke etotal 
+dump end all atom ${dump2} ${filename}_end.lammpstrj
+run ${time2} ##data to get yield end simulation
+
+write_restart ${filename}-Final_$(step).restart
+
+
+
+

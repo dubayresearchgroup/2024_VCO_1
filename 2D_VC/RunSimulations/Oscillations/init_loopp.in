@@ -1,0 +1,64 @@
+#Variable Definition
+
+#Filenames
+variable seed equal 49126
+variable name index random_${seed}
+log ${name}.log
+
+#Neighbor Parameters
+variable skin equal 0.5
+variable ghost equal 2.0
+
+#Potential Parameters
+variable sigma equal 0.25
+variable epsB equal 1.0
+variable cutB equal (2^(1/6))*${sigma}
+
+#Kinetic Parameters
+variable temp equal 1.0
+variable damp equal 0.35
+
+#Time Parameters
+variable time equal 1000000
+variable step equal 0.005
+variable delay equal 5
+variable thermo equal 2000
+variable dump equal 1000
+
+
+#Initial Definitions
+
+#Particle and Box Definitions 
+atom_style molecular
+dimension 2
+read_data ${name}
+
+#Neighbor Definitions
+neigh_modify delay ${delay}
+neighbor ${skin} bin
+comm_modify cutoff ${ghost}
+#bond_style zero nocoeff
+#bond_coeff *
+
+#Potential Definitions
+pair_style lj/cut ${cutB}
+pair_modify shift yes
+pair_coeff * * ${epsB} ${sigma} ${cutB}
+comm_modify cutoff ${ghost}
+
+#Kinetic Definitions
+fix 2 all rigid/nve/small molecule langevin ${temp} ${temp} ${damp} ${seed}
+fix 1 all enforce2d
+
+#Time Definitions
+timestep ${step}
+
+#Output Definitions
+thermo ${thermo}
+#dump dump1 all atom ${dump} ${name}.lammpstrj
+
+#Initialization
+run ${time}
+
+#Write Final State
+write_restart ${name}.restart

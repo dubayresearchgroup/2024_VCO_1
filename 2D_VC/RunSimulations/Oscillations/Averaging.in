@@ -1,0 +1,132 @@
+clear
+#Variable Definition
+
+#Filenames
+variable name string zj_real
+
+
+#Loops
+variable point index 0.95
+variable range index  0.4
+variable period index 20000
+variable chunk loop  50
+variable seed equal 74143
+
+variable start equal 28500000
+variable segment equal 30000
+
+variable segStart equal ${start}+((${chunk}-1)*${segment})
+print ${segStart} screen yes
+variable input string zj_real_${point}_${range}pt1_${period}
+print ${input} screen yes
+
+
+##calculate step that new period will start on
+variable mod equal ${segStart}%${period}
+print ${mod} screen yes
+if "${mod} == 0" then "variable shiftPer equal 0" &
+else "variable shiftPer equal (${period}-${mod})"
+
+print ${shiftPer} screen yes
+
+
+
+#Filenames
+variable filename string ${name}${chunk}_${point}_${range}pt1_${period}
+log ${filename}.log append
+
+
+#Neighbor Parameters
+variable skin equal 0.5
+variable ghost equal 2.0
+
+#oscillating parameters
+variable amp equal 2*${range}
+variable epsA equal ${amp}*(2*floor(step/${period})-floor(2*step/${period}))+(${point}+${range})
+
+#Potential Parameters
+variable sigma equal 0.25
+variable cutA equal 2.5*${sigma}
+variable epsB equal 1.0
+variable cutB equal (2^(1/6))*${sigma}
+
+#Kinetic Parameters
+variable temp equal 1.0
+variable damp equal 0.35
+
+#Time Parameters
+variable time index 10
+variable left equal 50-${period}
+
+variable step equal 0.005
+variable delay equal 5
+variable thermo equal 1
+variable dump equal ${period}/10
+variable dump2 equal 1
+
+#Initial Definitions
+
+#Particle and Box Definitions 
+atom_style molecular
+dimension 2
+read_restart ${input}.${segStart}
+
+
+#Neighbor Definitions
+neigh_modify delay ${delay} exclude molecule/intra all
+neighbor ${skin} bin
+comm_modify cutoff ${ghost}
+
+
+#Potential Definitions
+pair_style lj/cut ${cutA}
+pair_modify shift yes
+pair_coeff 3 3 ${epsA} ${sigma} ${cutA}
+pair_coeff 1 3 ${epsA} ${sigma} ${cutA}
+pair_coeff 1 1 ${epsA} ${sigma} ${cutA}
+pair_coeff * 2 ${epsB} ${sigma} ${cutB}
+pair_coeff 2 * ${epsB} ${sigma} ${cutB}
+
+#Kinetic Definitions
+fix 2 all rigid/nve/small molecule langevin ${temp} ${temp} ${damp} ${seed}
+fix 1 all enforce2d
+
+##Update time dependent attractions 
+fix 3 all adapt 1 pair lj/cut epsilon 3 3 v_epsA
+fix 4 all adapt 1 pair lj/cut epsilon 1 3 v_epsA
+fix 5 all adapt 1 pair lj/cut epsilon 1 1 v_epsA
+
+
+#Time Definitions
+timestep ${step}
+
+#Output Definitions
+thermo ${thermo}
+thermo_style custom step temp pe ke etotal v_epsA
+
+
+#Simulation
+run ${shiftPer}
+
+#Time Definitions
+timestep ${step}
+
+#Output Definitions
+thermo ${thermo}
+thermo_style custom step temp pe ke etotal v_epsA
+dump traj all atom ${dump} ${filename}-average${segStart}.lammpstrj
+
+#Simulation
+run ${period}
+
+write_restart zj_real${chunk}_${point}_${range}pt1_${period}.restart
+
+
+#Chunks
+next chunk
+jump SELF
+
+
+next point
+jump SELF
+
