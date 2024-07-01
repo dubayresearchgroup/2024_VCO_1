@@ -1,0 +1,19 @@
+Within this directory, files to run simulations are included. Please note that type A attractive tip is designated as type 3 for ease of analysis -- it still acts the same as all edge particles. 
+
+For static system: 
+
+1) create randomly placed system of triangular particles by defining a seed (or capsid, aggregate system)
+
+2) run with init_loopp.in to relax the system 
+
+3) run input.in to run production run 
+
+For oscillatory system: 
+
+1) create randomly placed system of triangular particles by defining a seed (or capsid, aggregate system)
+
+2) run with init_loopp.in to relax the system 
+
+3) run input.in to run production run 
+
+4) run Averaging.in to produce files to average over in a time-depdent setting (details included in SI 1.3)
