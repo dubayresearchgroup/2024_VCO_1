@@ -25,6 +25,8 @@ def ReadSnap (lines, atoms, head):
 
         line = next(lines)
 
+        ##! This is where the big change is compared to other versions 
+        ## of these functions!!
         IDstr, typS, xS, yS, zS, v_x, v_y, v_z = line.split()
         num[atom] = int(IDstr)
         typ[atom] = int(typS)

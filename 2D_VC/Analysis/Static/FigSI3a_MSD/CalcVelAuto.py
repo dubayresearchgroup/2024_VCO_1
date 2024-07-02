@@ -4,6 +4,8 @@ from neighList_2D import BoxAtoms, GetNeighbors
 from operator import itemgetter
 
 def Type3_Data(num_raw, typ, x_raw, y_raw, dimL):
+
+    ##Sort data to get tip
     
     AtomNum = num_raw[np.where(typ == 3)]
     x = x_raw[np.where(typ == 3)] * dimL
@@ -19,6 +21,7 @@ def CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL):
     VerticesXCoord = np.zeros((tris,3))
     VerticesYCoord = np.zeros((tris,3))
 
+    ## Find tip of each triangle
     Vert1 = num_raw[np.where(typ == 3)]
     Vert1_x = x_raw[np.where(typ == 3)] * dimL
     Vert1_y = y_raw[np.where(typ == 3)] * dimL
@@ -26,16 +29,18 @@ def CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL):
     type3Verts = np.column_stack((Vert1, Vert1_x, Vert1_y))
     type3Verts = sorted(type3Verts, key=itemgetter(0))
 
+    ## Get type b data that can be a potetnial vertice
     possNums = num_raw[np.where(typ == 2)]
     possx = x_raw[np.where(typ == 2)] * dimL
     possy = y_raw[np.where(typ == 2)] * dimL
-
     potType2Verts = np.column_stack((possNums, possx, possy))
     potType2Verts = sorted(potType2Verts, key=itemgetter(0))
 
     
     distanceTest = np.zeros(6)
     
+    ##Calculate distance between type A vertex and all type B atoms 
+    ## to determine which are type B vertices 
     for tri in range(tris):
         shifter = tri * 6
         
@@ -59,30 +64,12 @@ def CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL):
     return VerticesAtomNum , VerticesXCoord, VerticesYCoord
 
     
-        
-def OriginalCoords(file, tris, head, atoms, snaps, interval, dimL):
-    #Returns an array of arrays, with each internal array containing the triangle number, the CoM-x coordinate and CoM-y coordinate.
     
-    readSnaps = ReadSnaps(file, head, atoms, snaps, interval)
-    num_raw, typ, x_raw, y_raw,  x_vel, y_vel = next(readSnaps)
-
-    CoM_initial = np.zeros((tris,3))
-
-    
-    VerticesAtomNum, VerticesXCoord, VerticesYCoord = CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL)
-
-    for tri in range(tris):
-        CoM_initial[tri][0] = tri
-        CoM_initial[tri][1] = np.mean(VerticesXCoord[tri])
-        CoM_initial[tri][2] = np.mean(VerticesYCoord[tri])
-    #print(VerticesAtomNum)
-
-
-    return VerticesAtomNum, CoM_initial
-
 
         
 def CoM_Velocities(file, hi, tris, head, atoms, snaps, interval, dimL, VerticesAtomNum):
+
+    ##Gets average velocity and position for the COM of each triangle 
 
     readSnaps = ReadSnaps(file, head, atoms, snaps, interval)
     
@@ -131,7 +118,7 @@ def CoM_Velocities(file, hi, tris, head, atoms, snaps, interval, dimL, VerticesA
         XVelSnap[snap] = (vert1[2] + vert2[2] + vert3[2]) / 3
         YVelSnap[snap] = (vert1[3] + vert2[3] + vert3[3]) / 3
 
-    #print(XVelSnap, YVelSnap)
+
         
     return XPosSnap, YPosSnap, XVelSnap, YVelSnap
         

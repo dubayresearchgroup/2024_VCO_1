@@ -59,27 +59,7 @@ def CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL):
 
     return VerticesAtomNum , VerticesXCoord, VerticesYCoord
 
-    
-        
-def OriginalCoords(file, tris, head, atoms, snaps, interval, dimL):
-    #Returns an array of arrays, with each internal array containing the triangle number, the CoM-x coordinate and CoM-y coordinate.
-    
-    readSnaps = ReadSnaps(file, head, atoms, snaps, interval)
-    num_raw, typ, x_raw, y_raw,  x_vel, y_vel = next(readSnaps)
 
-    CoM_initial = np.zeros((tris,3))
-
-    
-    VerticesAtomNum, VerticesXCoord, VerticesYCoord = CenterOfMass(tris, atoms, num_raw, typ, x_raw, y_raw, dimL)
-
-    for tri in range(tris):
-        CoM_initial[tri][0] = tri
-        CoM_initial[tri][1] = np.mean(VerticesXCoord[tri])
-        CoM_initial[tri][2] = np.mean(VerticesYCoord[tri])
-    #print(VerticesAtomNum)
-
-
-    return VerticesAtomNum, CoM_initial
 
 
         
@@ -138,7 +118,7 @@ def CoM_Velocities(file, hi, tris, head, atoms, snaps, interval, dimL, VerticesA
         XVelSnap[snap] = (vert1[2] + vert2[2] + vert3[2]) / 3
         YVelSnap[snap] = (vert1[3] + vert2[3] + vert3[3]) / 3
 
-    #print(XVelSnap, YVelSnap)
+  
         
     return XPosSnap, YPosSnap, XVelSnap, YVelSnap, tip
         
